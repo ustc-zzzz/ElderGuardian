@@ -1,0 +1,97 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            name = 'forge'
+            url = 'http://files.minecraftforge.net/maven'
+        }
+        maven {
+            name = 'minecrell'
+            url = 'http://repo.minecrell.net/releases'
+        }
+        dependencies {
+            classpath 'net.minecrell:VanillaGradle:2.0.3_1'
+            classpath 'net.minecraftforge.gradle:ForgeGradle:2.2-SNAPSHOT'
+        }
+    }
+}
+
+apply plugin: 'net.minecrell.vanilla.server.library'
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+def getGitCommitHash = {
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine 'git', 'rev-parse', '--short', 'HEAD'
+        standardOutput = stdout
+    }
+    return stdout.toString().trim()
+}
+
+def getReleaseDate = {
+    def format = new java.text.SimpleDateFormat("yyyy-MM-dd") // RFC 3339
+    return format.format(new Date())
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = 'sponge'
+        url = 'http://repo.spongepowered.org/maven'
+    }
+}
+
+version = '0.1.0'
+archivesBaseName = "ElderGuardian"
+
+minecraft {
+    version = '1.10.2'
+    mappings = 'snapshot_20161111'
+
+    replace "@version@", project.version
+    replace "@git_hash@", getGitCommitHash()
+    replace "@release_date@", getReleaseDate()
+}
+
+task apiJar(type: Jar, dependsOn: sourceJar) {
+    from 'build/sources/api/java/'
+    baseName = 'ElderGuardianAPI'
+    
+    from 'api/LICENSE'
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    from 'build/docs/javadoc/'
+    classifier = 'javadoc'
+}
+
+artifacts {
+    archives apiJar
+    archives sourceJar
+    archives javadocJar
+}
+
+dependencies {
+    compile 'org.spongepowered:spongeapi:5.1.0'
+    compile 'org.spongepowered:spongecommon:5.1.0-SNAPSHOT:dev'
+}
+
+sourceSets {
+    main {
+        java.srcDir 'src/'
+        java.srcDir 'api/'
+        resources.srcDir 'resources/'
+    }
+    api {
+        java.srcDir 'api/'
+    }
+}
+
+reobf {
+    jar {
+        mappingType = 'SEARGE'
+    }
+}
+
