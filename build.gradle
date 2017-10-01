@@ -57,6 +57,8 @@ minecraft {
 
 task apiJar(type: Jar, dependsOn: sourceJar) {
     from 'build/sources/api/java/'
+    from 'build/classes/api/'
+
     baseName = 'ElderGuardianAPI'
     
     from 'api/LICENSE'
