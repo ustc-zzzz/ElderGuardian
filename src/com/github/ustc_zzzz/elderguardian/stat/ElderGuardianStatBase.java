@@ -14,10 +14,7 @@ import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.serializer.TextSerializers;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * @author ustc_zzzz
@@ -54,9 +51,12 @@ public abstract class ElderGuardianStatBase extends LoreStatEventDriven
         }
         if (this.templates.isEmpty())
         {
-            String defaultTemplateString = this.getDefaultTemplateString();
-            this.templates.add(LoreTemplate.of(defaultTemplateString, this.openArg, this.closeArg));
-            this.templateStrings.add(defaultTemplateString);
+            Collection<String> templates = this.getDefaultTemplates();
+            for (String template : templates)
+            {
+                this.templates.add(LoreTemplate.of(template, this.openArg, this.closeArg));
+                this.templateStrings.add(template);
+            }
         }
     }
 
@@ -67,10 +67,10 @@ public abstract class ElderGuardianStatBase extends LoreStatEventDriven
         node.getNode("templates").setValue(this.templateStrings);
     }
 
-    public String getDefaultTemplateString()
+    public Collection<String> getDefaultTemplates()
     {
         Text result = this.getPluginInstance().getTranslation().take(this.getDefaultTemplateStringTranslationKey());
-        return TextSerializers.FORMATTING_CODE.serialize(result);
+        return Collections.singletonList(TextSerializers.FORMATTING_CODE.serialize(result));
     }
 
     protected abstract String getDefaultTemplateStringTranslationKey();
