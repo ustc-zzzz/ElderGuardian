@@ -140,6 +140,11 @@ public class ElderGuardian
 
     public ElderGuardianTranslation getTranslation()
     {
-        return translation;
+        return this.translation;
+    }
+
+    public ElderGuardianService getLoreStatService()
+    {
+        return this.loreStatService;
     }
 }

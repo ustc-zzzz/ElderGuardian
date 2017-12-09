@@ -13,7 +13,9 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.serializer.TextSerializers;
+import org.spongepowered.api.util.annotation.NonnullByDefault;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 
 /**
@@ -79,16 +81,19 @@ public abstract class ElderGuardianStatBase extends LoreStatEventDriven
     {
         Optional<ItemStack> stackOptional = player.getItemInHand(HandTypes.MAIN_HAND);
         if (!stackOptional.isPresent()) stackOptional = player.getItemInHand(HandTypes.OFF_HAND);
+        // noinspection OptionalIsPresent
         if (!stackOptional.isPresent()) return ImmutableList.of();
         return this.loreStatService.getStats(this, stackOptional.get());
     }
 
+    @Nonnull
     @Override
     public Collection<LoreTemplate> getTemplates()
     {
         return this.templates;
     }
 
+    @Nonnull
     @Override
     protected ElderGuardian getPluginInstance()
     {

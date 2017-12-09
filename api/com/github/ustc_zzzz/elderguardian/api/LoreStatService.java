@@ -32,6 +32,8 @@ public interface LoreStatService
 
     Optional<LoreStat> getLoreStat(String id);
 
+    CoolDownHelper getCoolDownHelper();
+
     Optional<ItemStack> getItemStackOfPlayerFrom(Projectile entity);
 
     default List<DataContainer> getStats(LoreStat stat, Projectile entity)

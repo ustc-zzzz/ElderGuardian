@@ -1,6 +1,7 @@
 package com.github.ustc_zzzz.elderguardian.service;
 
 import com.github.ustc_zzzz.elderguardian.ElderGuardian;
+import com.github.ustc_zzzz.elderguardian.api.CoolDownHelper;
 import com.github.ustc_zzzz.elderguardian.api.LoreStat;
 import com.github.ustc_zzzz.elderguardian.api.LoreStatService;
 import com.google.common.collect.ImmutableSet;
@@ -22,12 +23,14 @@ import java.util.*;
 @NonnullByDefault
 public class ElderGuardianService implements LoreStatService
 {
+    private final ElderGuardianCoolDownHelper coolDownHelper;
     private final Map<String, LoreStat> stats = new HashMap<>();
     private final Set<String> enabledStats = new LinkedHashSet<>();
     private final Map<Projectile, ItemStack> stacks = new WeakHashMap<>();
 
     public ElderGuardianService(ElderGuardian plugin)
     {
+        this.coolDownHelper = new ElderGuardianCoolDownHelper(plugin);
         Sponge.getServiceManager().setProvider(plugin, LoreStatService.class, this);
         Sponge.getEventManager().registerListener(plugin, SpawnEntityEvent.class, this::onSpawnEntity);
     }
@@ -48,6 +51,12 @@ public class ElderGuardianService implements LoreStatService
     public Optional<LoreStat> getLoreStat(String id)
     {
         return Optional.ofNullable(this.stats.get(id));
+    }
+
+    @Override
+    public ElderGuardianCoolDownHelper getCoolDownHelper()
+    {
+        return this.coolDownHelper;
     }
 
     @Override
