@@ -1,5 +1,7 @@
 package com.github.ustc_zzzz.elderguardian.stat;
 
+import com.flowpowered.math.TrigMath;
+import com.flowpowered.math.vector.Vector3d;
 import com.github.ustc_zzzz.elderguardian.ElderGuardian;
 import com.github.ustc_zzzz.elderguardian.api.LoreStatEventDriven;
 import com.github.ustc_zzzz.elderguardian.api.LoreStatService;
@@ -84,6 +86,16 @@ public abstract class ElderGuardianStatBase extends LoreStatEventDriven
         // noinspection OptionalIsPresent
         if (!stackOptional.isPresent()) return ImmutableList.of();
         return this.loreStatService.getStats(this, stackOptional.get());
+    }
+
+    protected Vector3d getPlayerHeadingUnitVector(Player player, double norm)
+    {
+        double pitch = player.getHeadRotation().getX(), yaw = player.getHeadRotation().getY();
+        double yawCos = TrigMath.cos(-yaw * TrigMath.DEG_TO_RAD - TrigMath.PI);
+        double yawSin = TrigMath.sin(-yaw * TrigMath.DEG_TO_RAD - TrigMath.PI);
+        double pitchCos = -TrigMath.cos(-pitch * TrigMath.DEG_TO_RAD);
+        double pitchSin = TrigMath.sin(-pitch * TrigMath.DEG_TO_RAD);
+        return Vector3d.from(yawSin * pitchCos * norm, pitchSin * norm, yawCos * pitchCos * norm);
     }
 
     @Nonnull
