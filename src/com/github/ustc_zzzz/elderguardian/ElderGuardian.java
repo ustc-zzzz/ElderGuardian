@@ -59,6 +59,8 @@ public class ElderGuardian
         this.registerStat(new StatAOEEffect(this));
         this.registerStat(new StatArrow(this));
         this.registerStat(new StatAttract(this));
+        this.registerStat(new StatDamageDecrease(this));
+        this.registerStat(new StatDamageIncrease(this));
         this.registerStat(new StatFireball(this));
         this.registerStat(new StatLightning(this));
     }
