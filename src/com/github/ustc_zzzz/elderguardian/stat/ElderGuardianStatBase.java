@@ -88,16 +88,6 @@ public abstract class ElderGuardianStatBase extends LoreStatEventDriven
         return this.loreStatService.getStats(this, stackOptional.get());
     }
 
-    protected Vector3d getPlayerHeadingUnitVector(Player player, double norm)
-    {
-        double pitch = player.getHeadRotation().getX(), yaw = player.getHeadRotation().getY();
-        double yawCos = TrigMath.cos(-yaw * TrigMath.DEG_TO_RAD - TrigMath.PI);
-        double yawSin = TrigMath.sin(-yaw * TrigMath.DEG_TO_RAD - TrigMath.PI);
-        double pitchCos = -TrigMath.cos(-pitch * TrigMath.DEG_TO_RAD);
-        double pitchSin = TrigMath.sin(-pitch * TrigMath.DEG_TO_RAD);
-        return Vector3d.from(yawSin * pitchCos * norm, pitchSin * norm, yawCos * pitchCos * norm);
-    }
-
     @Nonnull
     @Override
     public Collection<LoreTemplate> getTemplates()

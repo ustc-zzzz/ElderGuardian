@@ -1,10 +1,9 @@
 package com.github.ustc_zzzz.elderguardian.stat;
 
-import com.flowpowered.math.TrigMath;
 import com.flowpowered.math.vector.Vector3d;
 import com.github.ustc_zzzz.elderguardian.ElderGuardian;
 import com.github.ustc_zzzz.elderguardian.service.ElderGuardianCoolDownHelper;
-import com.github.ustc_zzzz.elderguardian.unsafe.SpongeUnimplemented;
+import com.github.ustc_zzzz.elderguardian.util.ElderGuardianHelper;
 import org.spongepowered.api.data.DataContainer;
 import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.data.DataView;
@@ -14,7 +13,6 @@ import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.projectile.arrow.TippedArrow;
-import org.spongepowered.api.entity.projectile.explosive.fireball.SmallFireball;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.event.cause.entity.spawn.EntitySpawnCause;
@@ -66,12 +64,12 @@ public class ArrowStat extends ElderGuardianStatBase
         TippedArrow tippedArrow = (TippedArrow) world.createEntity(EntityTypes.TIPPED_ARROW, position);
         tippedArrow.setShooter(player);
 
-        Vector3d acceleration = this.getPlayerHeadingUnitVector(player, 1.6);
+        Vector3d acceleration = ElderGuardianHelper.getPlayerHeadingVector(player, 1.6);
         tippedArrow.setVelocity(acceleration);
         tippedArrow.offer(Keys.FIRE_TICKS, 2000);
         tippedArrow.offer(Keys.PICKUP_RULE, PickupRules.CREATIVE_ONLY);
 
-        world.playSound(SoundTypes.ENTITY_ARROW_SHOOT, position, 1.0F);
+        world.playSound(SoundTypes.ENTITY_ARROW_SHOOT, position, 1.0);
 
         Cause cause = Cause
                 .source(EntitySpawnCause.builder().entity(tippedArrow).type(SpawnTypes.CUSTOM).build())

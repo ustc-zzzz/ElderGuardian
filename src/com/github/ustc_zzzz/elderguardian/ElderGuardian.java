@@ -1,10 +1,7 @@
 package com.github.ustc_zzzz.elderguardian;
 
 import com.github.ustc_zzzz.elderguardian.service.ElderGuardianService;
-import com.github.ustc_zzzz.elderguardian.stat.ArrowStat;
-import com.github.ustc_zzzz.elderguardian.stat.ElderGuardianStatBase;
-import com.github.ustc_zzzz.elderguardian.stat.FireballStat;
-import com.github.ustc_zzzz.elderguardian.stat.LightningStat;
+import com.github.ustc_zzzz.elderguardian.stat.*;
 import com.google.common.base.Throwables;
 import com.google.inject.Inject;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
@@ -59,6 +56,7 @@ public class ElderGuardian
     @Listener
     public void onAboutToStartServer(GameAboutToStartServerEvent event)
     {
+        this.registerStat(new AOEEffectStat(this));
         this.registerStat(new ArrowStat(this));
         this.registerStat(new FireballStat(this));
         this.registerStat(new LightningStat(this));

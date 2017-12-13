@@ -4,6 +4,7 @@ import com.flowpowered.math.vector.Vector3d;
 import com.github.ustc_zzzz.elderguardian.ElderGuardian;
 import com.github.ustc_zzzz.elderguardian.service.ElderGuardianCoolDownHelper;
 import com.github.ustc_zzzz.elderguardian.unsafe.SpongeUnimplemented;
+import com.github.ustc_zzzz.elderguardian.util.ElderGuardianHelper;
 import org.spongepowered.api.data.DataContainer;
 import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.data.DataView;
@@ -62,7 +63,7 @@ public final class FireballStat extends ElderGuardianStatBase
         SmallFireball smallFireball = (SmallFireball) world.createEntity(EntityTypes.SMALL_FIREBALL, position);
         smallFireball.setShooter(player);
 
-        Vector3d acceleration = this.getPlayerHeadingUnitVector(player, 0.1);
+        Vector3d acceleration = ElderGuardianHelper.getPlayerHeadingVector(player, 0.1);
         SpongeUnimplemented.setFireballPower(smallFireball, acceleration);
 
         world.playSound(SoundTypes.ENTITY_GHAST_SHOOT, position, 1.0F);
