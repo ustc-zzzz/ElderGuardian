@@ -1,7 +1,6 @@
 package com.github.ustc_zzzz.elderguardian.service;
 
 import com.github.ustc_zzzz.elderguardian.ElderGuardian;
-import com.github.ustc_zzzz.elderguardian.api.CoolDownHelper;
 import com.github.ustc_zzzz.elderguardian.api.LoreStat;
 import com.github.ustc_zzzz.elderguardian.api.LoreStatService;
 import com.google.common.collect.ImmutableSet;

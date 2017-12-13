@@ -1,7 +1,5 @@
 package com.github.ustc_zzzz.elderguardian.stat;
 
-import com.flowpowered.math.TrigMath;
-import com.flowpowered.math.vector.Vector3d;
 import com.github.ustc_zzzz.elderguardian.ElderGuardian;
 import com.github.ustc_zzzz.elderguardian.api.LoreStatEventDriven;
 import com.github.ustc_zzzz.elderguardian.api.LoreStatService;
@@ -15,7 +13,6 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.serializer.TextSerializers;
-import org.spongepowered.api.util.annotation.NonnullByDefault;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -31,10 +28,12 @@ public abstract class ElderGuardianStatBase extends LoreStatEventDriven
 
     private String openArg;
     private String closeArg;
+    protected final String id;
 
-    public ElderGuardianStatBase(ElderGuardian plugin)
+    public ElderGuardianStatBase(ElderGuardian plugin, String statID)
     {
         super(plugin);
+        this.id = statID;
         this.loreStatService = Sponge.getServiceManager().provideUnchecked(LoreStatService.class);
     }
 
@@ -42,8 +41,8 @@ public abstract class ElderGuardianStatBase extends LoreStatEventDriven
     {
         this.templates.clear();
         this.templateStrings.clear();
-        this.openArg = node.getNode("open-arg").getString( "{{");
-        this.closeArg = node.getNode("close-arg").getString( "}}");
+        this.openArg = node.getNode("open-arg").getString("{{");
+        this.closeArg = node.getNode("close-arg").getString("}}");
         for (CommentedConfigurationNode child : node.getNode("templates").getChildrenList())
         {
             String value = child.getString();
@@ -100,5 +99,12 @@ public abstract class ElderGuardianStatBase extends LoreStatEventDriven
     protected ElderGuardian getPluginInstance()
     {
         return (ElderGuardian) super.getPluginInstance();
+    }
+
+    @Nonnull
+    @Override
+    public String getLoreStatId()
+    {
+        return this.id;
     }
 }

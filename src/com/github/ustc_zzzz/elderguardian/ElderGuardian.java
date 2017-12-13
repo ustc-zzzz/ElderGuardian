@@ -56,10 +56,10 @@ public class ElderGuardian
     @Listener
     public void onAboutToStartServer(GameAboutToStartServerEvent event)
     {
-        this.registerStat(new AOEEffectStat(this));
-        this.registerStat(new ArrowStat(this));
-        this.registerStat(new FireballStat(this));
-        this.registerStat(new LightningStat(this));
+        this.registerStat(new StatAOEEffect(this));
+        this.registerStat(new StatArrow(this));
+        this.registerStat(new StatFireball(this));
+        this.registerStat(new StatLightning(this));
     }
 
     @Listener

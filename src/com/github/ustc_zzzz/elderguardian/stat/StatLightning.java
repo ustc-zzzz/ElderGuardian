@@ -9,15 +9,11 @@ import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.projectile.Projectile;
-import org.spongepowered.api.entity.projectile.explosive.fireball.Fireball;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.action.CollideEvent;
 import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.event.cause.entity.damage.source.EntityDamageSource;
-import org.spongepowered.api.event.cause.entity.spawn.EntitySpawnCause;
-import org.spongepowered.api.event.cause.entity.spawn.SpawnCause;
 import org.spongepowered.api.event.entity.DamageEntityEvent;
-import org.spongepowered.api.event.entity.projectile.TargetProjectileEvent;
 import org.spongepowered.api.event.filter.cause.Named;
 import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.world.World;
@@ -28,21 +24,15 @@ import java.util.Random;
 /**
  * @author ustc_zzzz
  */
-public final class LightningStat extends ElderGuardianStatBase
+public final class StatLightning extends ElderGuardianStatBase
 {
     private final Cause cause;
     private final Random random = new Random();
 
-    public LightningStat(ElderGuardian plugin)
+    public StatLightning(ElderGuardian plugin)
     {
-        super(plugin);
+        super(plugin, "lightning");
         this.cause = Cause.source(this.getPluginInstance()).build();
-    }
-
-    @Override
-    public String getLoreStatId()
-    {
-        return "lightning";
     }
 
     @Override

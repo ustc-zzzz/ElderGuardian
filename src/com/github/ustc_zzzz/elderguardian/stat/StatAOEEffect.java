@@ -26,21 +26,14 @@ import java.util.function.Predicate;
 /**
  * @author ustc_zzzz
  */
-public class AOEEffectStat extends ElderGuardianStatBase
+public class StatAOEEffect extends ElderGuardianStatBase
 {
-    private final String id = "aoe_effect";
     private final ElderGuardianCoolDownHelper coolDownHelper;
 
-    public AOEEffectStat(ElderGuardian plugin)
+    public StatAOEEffect(ElderGuardian plugin)
     {
-        super(plugin);
+        super(plugin, "aoe_effect");
         this.coolDownHelper = plugin.getLoreStatService().getCoolDownHelper();
-    }
-
-    @Override
-    public String getLoreStatId()
-    {
-        return this.id;
     }
 
     @Override
