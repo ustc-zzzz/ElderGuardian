@@ -63,6 +63,7 @@ public class ElderGuardian
         this.registerStat(new StatDamageIncrease(this));
         this.registerStat(new StatFireball(this));
         this.registerStat(new StatLightning(this));
+        this.registerStat(new StatSelfEffect(this));
     }
 
     @Listener
