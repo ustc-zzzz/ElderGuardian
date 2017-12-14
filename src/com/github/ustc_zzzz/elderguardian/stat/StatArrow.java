@@ -26,6 +26,7 @@ import java.util.List;
 /**
  * @author ustc_zzzz
  */
+@ElderGuardianStat
 public class StatArrow extends ElderGuardianStatBase
 {
     private final ElderGuardianCoolDownHelper coolDownHelper;

@@ -1,8 +1,10 @@
 package com.github.ustc_zzzz.elderguardian;
 
 import com.github.ustc_zzzz.elderguardian.service.ElderGuardianService;
-import com.github.ustc_zzzz.elderguardian.stat.*;
+import com.github.ustc_zzzz.elderguardian.stat.ElderGuardianStat;
+import com.github.ustc_zzzz.elderguardian.stat.ElderGuardianStatBase;
 import com.google.common.base.Throwables;
+import com.google.common.reflect.ClassPath;
 import com.google.inject.Inject;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
@@ -56,14 +58,26 @@ public class ElderGuardian
     @Listener
     public void onAboutToStartServer(GameAboutToStartServerEvent event)
     {
-        this.registerStat(new StatAOEEffect(this));
-        this.registerStat(new StatArrow(this));
-        this.registerStat(new StatAttract(this));
-        this.registerStat(new StatDamageDecrease(this));
-        this.registerStat(new StatDamageIncrease(this));
-        this.registerStat(new StatFireball(this));
-        this.registerStat(new StatLightning(this));
-        this.registerStat(new StatSelfEffect(this));
+        try
+        {
+            Class<? extends ElderGuardian> pluginClass = this.getClass();
+            ClassPath classPath = ClassPath.from(pluginClass.getClassLoader());
+            String packageName = ElderGuardianStat.class.getPackage().getName();
+            for (ClassPath.ClassInfo info : classPath.getTopLevelClasses(packageName))
+            {
+                Class<?> statClass = info.load();
+                if (statClass.isAnnotationPresent(ElderGuardianStat.class))
+                {
+                    Object instance = statClass.getConstructor(pluginClass).newInstance(this);
+                    this.translation.info("elderguardian.register", statClass.getName());
+                    this.registerStat((ElderGuardianStatBase) instance);
+                }
+            }
+        }
+        catch (IOException | ReflectiveOperationException | ClassCastException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     @Listener

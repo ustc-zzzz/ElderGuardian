@@ -25,6 +25,7 @@ import java.util.List;
 /**
  * @author ustc_zzzz
  */
+@ElderGuardianStat
 public final class StatFireball extends ElderGuardianStatBase
 {
     private final ElderGuardianCoolDownHelper coolDownHelper;

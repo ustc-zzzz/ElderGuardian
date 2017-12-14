@@ -19,6 +19,7 @@ import java.util.Optional;
 /**
  * @author ustc_zzzz
  */
+@ElderGuardianStat
 public class StatAttract extends ElderGuardianStatBase
 {
     private Optional<Task> task = Optional.empty();

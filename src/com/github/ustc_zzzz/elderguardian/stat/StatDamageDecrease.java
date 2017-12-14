@@ -18,6 +18,7 @@ import java.util.List;
 /**
  * @author ustc_zzzz
  */
+@ElderGuardianStat
 public class StatDamageDecrease extends ElderGuardianStatBase
 {
     public StatDamageDecrease(ElderGuardian plugin)

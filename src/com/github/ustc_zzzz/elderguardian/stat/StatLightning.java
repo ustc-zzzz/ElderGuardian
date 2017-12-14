@@ -24,6 +24,7 @@ import java.util.Random;
 /**
  * @author ustc_zzzz
  */
+@ElderGuardianStat
 public final class StatLightning extends ElderGuardianStatBase
 {
     private final Cause cause;

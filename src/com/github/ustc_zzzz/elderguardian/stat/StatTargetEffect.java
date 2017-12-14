@@ -8,48 +8,56 @@ import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.data.DataView;
 import org.spongepowered.api.data.manipulator.mutable.PotionEffectData;
 import org.spongepowered.api.effect.potion.PotionEffect;
-import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.Entity;
-import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
-import org.spongepowered.api.event.filter.cause.First;
-import org.spongepowered.api.event.item.inventory.InteractItemEvent;
-import org.spongepowered.api.util.AABB;
-import org.spongepowered.api.world.World;
+import org.spongepowered.api.event.cause.entity.damage.source.EntityDamageSource;
+import org.spongepowered.api.event.cause.entity.damage.source.IndirectEntityDamageSource;
+import org.spongepowered.api.event.entity.AttackEntityEvent;
+import org.spongepowered.api.event.entity.DamageEntityEvent;
+import org.spongepowered.api.event.filter.cause.Named;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.function.Predicate;
 
 /**
  * @author ustc_zzzz
  */
 @ElderGuardianStat
-public class StatAOEEffect extends ElderGuardianStatBase
+public class StatTargetEffect extends ElderGuardianStatBase
 {
     private final ElderGuardianCoolDownHelper coolDownHelper;
 
-    public StatAOEEffect(ElderGuardian plugin)
+    public StatTargetEffect(ElderGuardian plugin)
     {
-        super(plugin, "aoe_effect");
+        super(plugin, "target_effect");
         this.coolDownHelper = plugin.getLoreStatService().getCoolDownHelper();
     }
 
     @Override
     protected String getDefaultTemplateStringTranslationKey()
     {
-        return "elderguardian.aoeEffect.defaultTemplate";
+        return "elderguardian.targetEffect.defaultTemplate";
     }
 
     @Listener
-    public void onUseItemStack(InteractItemEvent.Secondary event, @First Player player)
+    public void onAttackEntity(AttackEntityEvent event, @Named(AttackEntityEvent.SOURCE) EntityDamageSource ds)
     {
-        Optional<AABB> aabbOptional = player.getBoundingBox();
-        if (!aabbOptional.isPresent()) return;
-        AABB aabb = aabbOptional.get();
+        Entity sourceEntity = ds.getSource();
+        if (!(sourceEntity instanceof Player)) return;
+        this.giveTargetEffect(event.getTargetEntity(), (Player) sourceEntity);
+    }
 
+    @Listener
+    public void onDamageEntity(DamageEntityEvent event, @Named(DamageEntityEvent.SOURCE) IndirectEntityDamageSource ds)
+    {
+        Entity sourceEntity = ds.getIndirectSource();
+        if (!(sourceEntity instanceof Player)) return;
+        this.giveTargetEffect(event.getTargetEntity(), (Player) sourceEntity);
+    }
+
+    private void giveTargetEffect(Entity target, Player player)
+    {
         List<DataContainer> stats = this.getStatsInHand(player);
         int coolDown = stats.stream().mapToInt(this::getCoolDown).reduce(0, Math::max);
         if (this.coolDownHelper.isInCoolDown(this.id, player)) return;
@@ -59,27 +67,15 @@ public class StatAOEEffect extends ElderGuardianStatBase
         {
             String effect = stat.getString(DataQuery.of("effect")).orElse("");
             int duration = stat.getInt(DataQuery.of("duration")).orElse(450);
-            int diameter = stat.getInt(DataQuery.of("range")).orElse(5) * 2;
 
             Optional<PotionEffect> potionEffectOptional = ElderGuardianHelper.getPotionEffect(effect, duration);
-            if (potionEffectOptional.isPresent())
-            {
-                World world = player.getWorld();
-                AABB range = aabb.expand(diameter, diameter, diameter);
-                PotionEffect potionEffect = potionEffectOptional.get();
-                this.giveRangeEffect(world, range, e -> e instanceof Living && !e.equals(player), potionEffect);
-            }
+            potionEffectOptional.ifPresent(potionEffect -> this.giveEffect(target, potionEffect));
         }
     }
 
-    private void giveRangeEffect(World world, AABB range, Predicate<Entity> filter, PotionEffect effect)
+    private void giveEffect(Entity target, PotionEffect effect)
     {
-        Set<Entity> entities = world.getIntersectingEntities(range, filter);
-        for (Entity entity : entities)
-        {
-            world.playSound(SoundTypes.ENTITY_SPLASH_POTION_BREAK, entity.getLocation().getPosition(), 1.0);
-            entity.getOrCreate(PotionEffectData.class).ifPresent(data -> entity.offer(data.addElement(effect)));
-        }
+        target.getOrCreate(PotionEffectData.class).ifPresent(data -> target.offer(data.addElement(effect)));
     }
 
     private int getCoolDown(DataView data)
