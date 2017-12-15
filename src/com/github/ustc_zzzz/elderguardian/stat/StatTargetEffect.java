@@ -24,7 +24,7 @@ import java.util.Optional;
  * @author ustc_zzzz
  */
 @ElderGuardianStat
-public class StatTargetEffect extends ElderGuardianStatBase
+public final class StatTargetEffect extends ElderGuardianStatBase
 {
     private final ElderGuardianCoolDownHelper coolDownHelper;
 

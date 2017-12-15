@@ -20,7 +20,7 @@ import java.util.Optional;
  * @author ustc_zzzz
  */
 @ElderGuardianStat
-public class StatSelfEffect extends ElderGuardianStatBase
+public final class StatSelfEffect extends ElderGuardianStatBase
 {
     private final ElderGuardianCoolDownHelper coolDownHelper;
 

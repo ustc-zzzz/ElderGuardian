@@ -23,7 +23,7 @@ import java.util.Optional;
  * @author ustc_zzzz
  */
 @ElderGuardianStat
-public class StatLifeSteal extends ElderGuardianStatBase
+public final class StatLifeSteal extends ElderGuardianStatBase
 {
     public StatLifeSteal(ElderGuardian plugin)
     {

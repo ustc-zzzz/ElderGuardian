@@ -27,7 +27,7 @@ import java.util.function.Predicate;
  * @author ustc_zzzz
  */
 @ElderGuardianStat
-public class StatAOEEffect extends ElderGuardianStatBase
+public final class StatAOEEffect extends ElderGuardianStatBase
 {
     private final ElderGuardianCoolDownHelper coolDownHelper;
 
