@@ -41,7 +41,7 @@ public final class StatDamageIncrease extends ElderGuardianStatBase
         List<DataContainer> stats = this.getStatsInHand((Player) sourceEntity);
         double modifier = stats.stream().mapToDouble(this::getModifier).reduce(0, (a, b) -> a + b);
 
-        event.setBaseOutputDamage(event.getBaseOutputDamage() * (1 + modifier));
+        event.setBaseOutputDamage(event.getBaseOutputDamage() * (1 + Math.max(-1, modifier)));
     }
 
     @Listener
@@ -53,7 +53,7 @@ public final class StatDamageIncrease extends ElderGuardianStatBase
         List<DataContainer> stats = this.getStatsInHand((Player) sourceEntity);
         double modifier = stats.stream().mapToDouble(this::getModifier).reduce(0, (a, b) -> a + b);
 
-        event.setBaseDamage(event.getBaseDamage() * (1 + modifier));
+        event.setBaseDamage(event.getBaseDamage() * (1 + Math.max(-1, modifier)));
     }
 
     private double getModifier(DataView data)
