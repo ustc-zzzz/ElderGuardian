@@ -16,7 +16,7 @@ public interface CoolDownHelper
     /**
      * Get the cooldown (ticks) for specified key and player
      *
-     * @param key a key for identifying cooldown
+     * @param key    a key for identifying cooldown
      * @param player the target player
      * @return the cooldown if it exists, otherwise 0
      */
@@ -25,9 +25,9 @@ public interface CoolDownHelper
     /**
      * Set the cooldown (ticks) for specified key and player
      *
-     * @param key a key for identifying cooldown
+     * @param key      a key for identifying cooldown
      * @param coolDown the cooldown to be set
-     * @param player the target player
+     * @param player   the target player
      * @return the previous cooldown if it exists, otherwise 0
      */
     long setCoolDown(String key, long coolDown, Player player);
@@ -35,9 +35,9 @@ public interface CoolDownHelper
     /**
      * Add the cooldown (ticks) for specified key and player
      *
-     * @param key a key for identifying cooldown
+     * @param key      a key for identifying cooldown
      * @param coolDown the cooldown to be added
-     * @param player the target player
+     * @param player   the target player
      * @return the previous cooldown if it exists, otherwise 0
      */
     long addCoolDown(String key, long coolDown, Player player);
@@ -45,7 +45,7 @@ public interface CoolDownHelper
     /**
      * Check if a player is still in cooldown for a specified key
      *
-     * @param key a key for identifying cooldown
+     * @param key    a key for identifying cooldown
      * @param player the target player
      * @return if the cooldown does exist
      */

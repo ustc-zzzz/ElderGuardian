@@ -62,7 +62,7 @@ public final class StatLightning extends ElderGuardianStatBase
     @Listener
     public void onCollideImpact(CollideEvent.Impact event, @Root Projectile projectile)
     {
-        List<DataContainer> stats = this.loreStatService.getStats(this, projectile);
+        List<DataContainer> stats = this.getStatsInHand(projectile);
         int possibility = stats.stream().mapToInt(this::getPossibility).reduce(Math::min).orElse(0);
 
         if (possibility > 0 && this.random.nextInt(possibility) == 0)

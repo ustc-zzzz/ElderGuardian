@@ -4,6 +4,7 @@ import com.github.ustc_zzzz.elderguardian.service.ElderGuardianService;
 import com.github.ustc_zzzz.elderguardian.stat.ElderGuardianStat;
 import com.github.ustc_zzzz.elderguardian.stat.ElderGuardianStatBase;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.ClassPath;
 import com.google.inject.Inject;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
@@ -14,7 +15,10 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.GameReloadEvent;
-import org.spongepowered.api.event.game.state.*;
+import org.spongepowered.api.event.game.state.GameAboutToStartServerEvent;
+import org.spongepowered.api.event.game.state.GamePostInitializationEvent;
+import org.spongepowered.api.event.game.state.GameStartedServerEvent;
+import org.spongepowered.api.event.game.state.GameStoppingServerEvent;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.text.channel.MessageReceiver;
 
@@ -22,6 +26,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author ustc_zzzz
@@ -39,14 +44,15 @@ public class ElderGuardian
 
     @Inject
     @DefaultConfig(sharedRoot = false)
-    private ConfigurationLoader<CommentedConfigurationNode> config;
+    private ConfigurationLoader<CommentedConfigurationNode> configurationLoader;
 
-    private CommentedConfigurationNode rootConfigNode;
+    private CommentedConfigurationNode rootConfig;
 
     private ElderGuardianTranslation translation;
     private ElderGuardianService loreStatService;
 
     private List<ElderGuardianStatBase> stats = new LinkedList<>();
+    private Set<String> availableStats;
 
     @Listener
     public void onPostInitialization(GamePostInitializationEvent event)
@@ -81,50 +87,46 @@ public class ElderGuardian
     }
 
     @Listener
-    public void onStartingServer(GameStartingServerEvent event)
-    {
-        try
-        {
-            this.translation.info("elderguardian.load.start");
-            this.loadConfig();
-            this.saveConfig();
-            this.translation.info("elderguardian.load.finish");
-        }
-        catch (IOException e)
-        {
-            throw Throwables.propagate(e);
-        }
-    }
-
-    @Listener
     public void onStartedServer(GameStartedServerEvent event)
     {
+        this.translation.info("elderguardian.load.start");
+
+        this.loadConfig();
+
+        this.loreStatService.enableStats(this.availableStats);
         this.translation.info("elderguardian.enable");
-        this.loreStatService.loadConfig(this.rootConfigNode.getNode(PLUGIN_ID, "enabled-modules"));
+
+        this.saveConfig();
+
+        this.translation.info("elderguardian.load.finish");
+
     }
 
     @Listener
     public void onStoppingServer(GameStoppingServerEvent event)
     {
+        this.availableStats = this.loreStatService.disableStats();
+
         this.translation.info("elderguardian.disable");
-        this.loreStatService.saveConfig(this.rootConfigNode.getNode(PLUGIN_ID, "enabled-modules"));
     }
 
     @Listener
     public void onReload(GameReloadEvent event)
     {
-        try
-        {
-            MessageReceiver src = event.getCause().first(CommandSource.class).orElse(Sponge.getServer().getConsole());
-            src.sendMessage(this.translation.take("elderguardian.reload.start"));
-            this.loadConfig();
-            this.saveConfig();
-            src.sendMessage(this.translation.take("elderguardian.reload.finish"));
-        }
-        catch (IOException e)
-        {
-            throw Throwables.propagate(e);
-        }
+        MessageReceiver src = event.getCause().first(CommandSource.class).orElse(Sponge.getServer().getConsole());
+        src.sendMessage(this.translation.take("elderguardian.reload.start"));
+
+        this.availableStats = this.loreStatService.disableStats();
+        this.translation.info("elderguardian.disable");
+
+        this.loadConfig();
+
+        this.loreStatService.enableStats(this.availableStats);
+        this.translation.info("elderguardian.enable");
+
+        this.saveConfig();
+
+        src.sendMessage(this.translation.take("elderguardian.reload.finish"));
     }
 
     private void registerStat(ElderGuardianStatBase stat)
@@ -133,22 +135,56 @@ public class ElderGuardian
         this.loreStatService.registerStat(stat);
     }
 
-    private void loadConfig() throws IOException
+    private Set<String> getEnabledStats(CommentedConfigurationNode node)
     {
-        CommentedConfigurationNode root = config.load();
-
-        this.stats.forEach(stat -> stat.loadConfig(root.getNode(stat.getLoreStatId().replace('_', '-'))));
-
-        this.rootConfigNode = root;
+        ImmutableSet.Builder<String> builder = ImmutableSet.builder();
+        for (String id : this.loreStatService.getAvailableStats())
+        {
+            if (node.getNode(id.replace('_', '-')).getBoolean(true)) builder.add(id);
+        }
+        return builder.build();
     }
 
-    private void saveConfig() throws IOException
+    private void setEnabledStats(CommentedConfigurationNode node, Set<String> enabledModules)
     {
-        CommentedConfigurationNode root = Optional.ofNullable(this.rootConfigNode).orElseGet(config::createEmptyNode);
+        for (String id : this.loreStatService.getAvailableStats())
+        {
+            node.getNode(id.replace('_', '-')).setValue(enabledModules.contains(id));
+        }
+    }
 
-        this.stats.forEach(stat -> stat.saveConfig(root.getNode(stat.getLoreStatId().replace('_', '-'))));
+    private void loadConfig()
+    {
+        try
+        {
+            CommentedConfigurationNode root = configurationLoader.load();
 
-        config.save(root);
+            this.availableStats = this.getEnabledStats(root.getNode(PLUGIN_ID, "enabled-modules"));
+            this.loreStatService.loadLoreConfig(root.getNode("lores"));
+
+            this.rootConfig = root;
+        }
+        catch (IOException e)
+        {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    private void saveConfig()
+    {
+        try
+        {
+            CommentedConfigurationNode root = Optional.ofNullable(this.rootConfig).orElseGet(configurationLoader::createEmptyNode);
+
+            this.setEnabledStats(root.getNode(PLUGIN_ID, "enabled-modules"), availableStats);
+            this.loreStatService.saveLoreConfig(root.getNode("lores"));
+
+            configurationLoader.save(root);
+        }
+        catch (IOException e)
+        {
+            throw Throwables.propagate(e);
+        }
     }
 
     public Logger getLogger()

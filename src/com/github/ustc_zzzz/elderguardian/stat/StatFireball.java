@@ -45,7 +45,7 @@ public final class StatFireball extends ElderGuardianStatBase
     @Listener
     public void onUseItemStack(InteractItemEvent.Primary event, @First Player player)
     {
-        List<DataContainer> stats = this.loreStatService.getStats(this, event.getItemStack().createStack());
+        List<DataContainer> stats = this.getStatsInHand(player, event.getItemStack());
         if (stats.isEmpty()) return;
 
         int coolDown = stats.stream().mapToInt(this::getCoolDown).reduce(0, Math::max);

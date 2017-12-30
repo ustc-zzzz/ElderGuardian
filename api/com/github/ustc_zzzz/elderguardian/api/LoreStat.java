@@ -2,12 +2,10 @@ package com.github.ustc_zzzz.elderguardian.api;
 
 import org.spongepowered.api.util.annotation.NonnullByDefault;
 
-import java.util.Collection;
-
 /**
  * The base class for adding new stats of skills.
  * <p>
- * New LoreStats should be register at {@link org.spongepowered.api.event.game.state.GameAboutToStartServerEvent}
+ * New LoreStats should be registered at {@link org.spongepowered.api.event.game.state.GameAboutToStartServerEvent}
  * by {@link LoreStatService#registerStat(LoreStat)}. It is ensured that the service is available before the event
  * is fired. The service should be fetched by {@link org.spongepowered.api.service.ServiceManager#provide(Class)}.
  * </p>
@@ -25,17 +23,12 @@ public interface LoreStat
     String getLoreStatId();
 
     /**
-     * This method will be called when the LoreStat is enabled.
+     * This method will be called when the LoreStat is enabled. At that time the {@link LoreStatService} is available.
      */
     void onLoreStatEnable();
 
     /**
-     * This method will be called when the LoreStat is disabled.
+     * This method will be called when the LoreStat is disabled. At that time the {@link LoreStatService} is available.
      */
     void onLoreStatDisable();
-
-    /**
-     * Templates for recognizing LoreStats and extract data.
-     */
-    Collection<LoreTemplate> getTemplates();
 }

@@ -1,17 +1,24 @@
 package com.github.ustc_zzzz.elderguardian.service;
 
 import com.github.ustc_zzzz.elderguardian.ElderGuardian;
+import com.github.ustc_zzzz.elderguardian.api.LoreMatcher;
+import com.github.ustc_zzzz.elderguardian.api.LoreMatcherContext;
 import com.github.ustc_zzzz.elderguardian.api.LoreStat;
 import com.github.ustc_zzzz.elderguardian.api.LoreStatService;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.data.DataContainer;
+import org.spongepowered.api.data.MemoryDataContainer;
 import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.projectile.Projectile;
 import org.spongepowered.api.event.entity.SpawnEntityEvent;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.util.annotation.NonnullByDefault;
 
 import java.util.*;
@@ -20,7 +27,7 @@ import java.util.*;
  * @author ustc_zzzz
  */
 @NonnullByDefault
-public class ElderGuardianService implements LoreStatService
+public class ElderGuardianService extends ElderGuardianLoreMatcherHandler implements LoreStatService
 {
     private final ElderGuardianCoolDownHelper coolDownHelper;
     private final Map<String, LoreStat> stats = new HashMap<>();
@@ -53,6 +60,31 @@ public class ElderGuardianService implements LoreStatService
     }
 
     @Override
+    public LoreMatcherContext getContextBy(Player player)
+    {
+        return new ElderGuardianPlayerMatcherContext(player);
+    }
+
+    @Override
+    public LoreMatcherContext getContextBy(Projectile entity)
+    {
+        if (this.stacks.containsKey(entity))
+        {
+            return new ElderGuardianProjectileMatcherContext(this.stacks.get(entity).createSnapshot(), entity);
+        }
+        else
+        {
+            return new ElderGuardianProjectileMatcherContext(entity);
+        }
+    }
+
+    @Override
+    public LoreMatcherContext getContextBy(Player player, ItemStackSnapshot stack)
+    {
+        return new ElderGuardianPlayerMatcherContext(stack, player);
+    }
+
+    @Override
     public ElderGuardianCoolDownHelper getCoolDownHelper()
     {
         return this.coolDownHelper;
@@ -62,12 +94,6 @@ public class ElderGuardianService implements LoreStatService
     public Collection<String> getAvailableStats()
     {
         return ImmutableSet.copyOf(this.stats.keySet());
-    }
-
-    @Override
-    public Optional<ItemStack> getItemStackOfPlayerFrom(Projectile entity)
-    {
-        return Optional.ofNullable(this.stacks.get(entity));
     }
 
     private void onSpawnEntity(SpawnEntityEvent event)
@@ -83,35 +109,101 @@ public class ElderGuardianService implements LoreStatService
         }
     }
 
-    public void loadConfig(CommentedConfigurationNode node)
+    public void enableStats(Set<String> enabledStats)
     {
-        for (Map.Entry<String, LoreStat> entry : this.stats.entrySet())
+        for (String id : enabledStats)
         {
-            String id = entry.getKey();
-            boolean enabled = node.getNode(id.replace('_', '-')).getBoolean(true);
-            if (enabled && !this.enabledStats.contains(id))
+            if (!this.enabledStats.contains(id))
             {
                 this.enabledStats.add(id);
-                this.stats.get(id).onLoreStatEnable();
+                if (this.stats.containsKey(id)) this.stats.get(id).onLoreStatEnable();
             }
         }
     }
 
-    public void saveConfig(CommentedConfigurationNode node)
+    public Set<String> disableStats()
     {
-        for (Map.Entry<String, LoreStat> entry : this.stats.entrySet())
+        ImmutableSet.Builder<String> builder = ImmutableSet.builder();
+        for (String id : this.enabledStats)
         {
-            String id = entry.getKey();
-            if (this.enabledStats.contains(id))
-            {
-                entry.getValue().onLoreStatDisable();
-                node.getNode(id.replace('_', '-')).setValue(true);
-            }
-            else
-            {
-                node.getNode(id.replace('_', '-')).setValue(false);
-            }
+            builder.add(id);
+            if (this.stats.containsKey(id)) this.stats.get(id).onLoreStatDisable();
         }
         this.enabledStats.clear();
+        return builder.build();
+    }
+
+    public void loadLoreConfig(CommentedConfigurationNode node)
+    {
+        this.matchers.clear();
+        for (Map.Entry<Object, ? extends CommentedConfigurationNode> entry : node.getChildrenMap().entrySet())
+        {
+            LinkedList<LoreMatcher> matchers = new LinkedList<>();
+            for (CommentedConfigurationNode child : entry.getValue().getChildrenList())
+            {
+                List<String> templateStrings = this.getTemplateStrings(child);
+                if (!templateStrings.isEmpty())
+                {
+                    DataContainer d = new MemoryDataContainer();
+                    d.set(LoreMatcher.CLOSE_ARG, child.getNode("close-arg").getString(LoreMatcher.DEFAULT_CLOSE_ARG));
+                    d.set(LoreMatcher.OPEN_ARG, child.getNode("open-arg").getString(LoreMatcher.DEFAULT_OPEN_ARG));
+                    d.set(LoreMatcher.TEMPLATES, templateStrings);
+                    matchers.add(LoreMatcher.fromContainer(d));
+                }
+            }
+            if (!matchers.isEmpty()) this.matchers.put(entry.getKey().toString().replace('-', '_'), matchers);
+        }
+    }
+
+    public void saveLoreConfig(CommentedConfigurationNode node)
+    {
+        node.setValue(ImmutableMap.of());
+        for (Map.Entry<String, LinkedList<LoreMatcher>> entry : this.matchers.entrySet())
+        {
+            CommentedConfigurationNode childrenNodeList = node.getNode(entry.getKey().replace('_', '-'));
+            childrenNodeList.setValue(ImmutableList.of());
+            for (LoreMatcher matcher : entry.getValue())
+            {
+                CommentedConfigurationNode child = childrenNodeList.getAppendedNode();
+                child.getNode("close-arg").setValue(matcher.getCloseArg());
+                child.getNode("open-arg").setValue(matcher.getOpenArg());
+                this.setTemplateStrings(child, matcher.getTemplates());
+            }
+        }
+    }
+
+    private List<String> getTemplateStrings(CommentedConfigurationNode node)
+    {
+        List<String> templates = new ArrayList<>();
+        String template = node.getNode("template").getString("");
+        if (template.isEmpty())
+        {
+            for (CommentedConfigurationNode templateNode : node.getNode("templates").getChildrenList())
+            {
+                template = templateNode.getString("");
+                if (!template.isEmpty()) templates.add(template);
+            }
+            return templates;
+        }
+        templates.add(template);
+        return templates;
+    }
+
+    private void setTemplateStrings(CommentedConfigurationNode node, List<String> templateStrings)
+    {
+        switch (templateStrings.size())
+        {
+        case 0:
+            node.removeChild("template");
+            node.removeChild("templates");
+            break;
+        case 1:
+            node.removeChild("templates");
+            node.getNode("template").setValue(templateStrings.iterator().next());
+            break;
+        default:
+            node.removeChild("template");
+            node.getNode("templates").setValue(templateStrings);
+        }
     }
 }
