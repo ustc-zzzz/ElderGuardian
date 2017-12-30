@@ -1,15 +1,22 @@
 package com.github.ustc_zzzz.elderguardian.service;
 
+import com.github.ustc_zzzz.elderguardian.ElderGuardian;
 import com.github.ustc_zzzz.elderguardian.api.LoreMatcher;
 import com.github.ustc_zzzz.elderguardian.api.LoreMatcherHandler;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
+import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
+import ninja.leaping.configurate.loader.ConfigurationLoader;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.DataContainer;
 import org.spongepowered.api.data.MemoryDataContainer;
+import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.util.annotation.NonnullByDefault;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.*;
 
 /**
@@ -18,7 +25,19 @@ import java.util.*;
 @NonnullByDefault
 public class ElderGuardianLoreMatcherHandler implements LoreMatcherHandler
 {
+    private final ElderGuardian plugin;
     private final Map<String, LinkedList<LoreMatcher>> matchers = new HashMap<>();
+
+    private boolean dirty = false;
+    private String filePathString = "data.conf";
+    private ConfigurationLoader<CommentedConfigurationNode> loader;
+
+    public ElderGuardianLoreMatcherHandler(ElderGuardian plugin)
+    {
+        this.plugin = plugin;
+        this.loader = HoconConfigurationLoader.builder().build();
+        Sponge.getScheduler().createTaskBuilder().intervalTicks(2).execute(this::saveIfDirty).submit(plugin);
+    }
 
     @Override
     public Collection<String> getAvailableLoreMatchers()
@@ -36,15 +55,56 @@ public class ElderGuardianLoreMatcherHandler implements LoreMatcherHandler
     public void clearLoreMatchers(String id)
     {
         this.matchers.remove(id);
+        this.dirty = true;
     }
 
     @Override
     public void addLoreMatcher(String id, LoreMatcher loreMatcher)
     {
         this.matchers.computeIfAbsent(id, k -> new LinkedList<>()).add(loreMatcher);
+        this.dirty = true;
     }
 
-    public void loadLoreConfig(CommentedConfigurationNode node)
+    public void loadConfig(CommentedConfigurationNode node) throws IOException
+    {
+        this.filePathString = node.getNode("config-file-path").getString("data.conf");
+        Path path = this.plugin.getConfigurationDir().resolve(this.filePathString);
+        this.loader = HoconConfigurationLoader.builder().setPath(path).build();
+        CommentedConfigurationNode root = this.loader.load();
+        this.loadLoreConfig(root.getNode("lores"));
+    }
+
+    public void saveConfig(CommentedConfigurationNode node) throws IOException
+    {
+        CommentedConfigurationNode root = this.loader.createEmptyNode();
+        node.getNode("config-file-path").setValue(this.filePathString);
+        this.saveLoreConfig(root.getNode("lores"));
+        this.loader.save(root);
+        this.dirty = false;
+    }
+
+    private void saveIfDirty(Task task)
+    {
+        if (this.dirty)
+        {
+            try
+            {
+                CommentedConfigurationNode root = this.loader.createEmptyNode();
+                this.saveLoreConfig(root.getNode("lore"));
+                this.loader.save(root);
+            }
+            catch (IOException e)
+            {
+                this.plugin.getLogger().error("Error found when saving data to config file: " + filePathString, e);
+            }
+            finally
+            {
+                this.dirty = false;
+            }
+        }
+    }
+
+    private void loadLoreConfig(CommentedConfigurationNode node)
     {
         this.matchers.clear();
         for (Map.Entry<Object, ? extends CommentedConfigurationNode> entry : node.getChildrenMap().entrySet())
@@ -66,7 +126,7 @@ public class ElderGuardianLoreMatcherHandler implements LoreMatcherHandler
         }
     }
 
-    public void saveLoreConfig(CommentedConfigurationNode node)
+    private void saveLoreConfig(CommentedConfigurationNode node)
     {
         node.setValue(ImmutableMap.of());
         for (Map.Entry<String, LinkedList<LoreMatcher>> entry : this.matchers.entrySet())

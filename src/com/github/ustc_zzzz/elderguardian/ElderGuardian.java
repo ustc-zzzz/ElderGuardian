@@ -12,6 +12,7 @@ import ninja.leaping.configurate.loader.ConfigurationLoader;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandSource;
+import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.GameReloadEvent;
@@ -23,6 +24,7 @@ import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.text.channel.MessageReceiver;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +43,10 @@ public class ElderGuardian
 
     @Inject
     private Logger logger;
+
+    @Inject
+    @ConfigDir(sharedRoot = false)
+    private Path configurationDir;
 
     @Inject
     @DefaultConfig(sharedRoot = false)
@@ -106,7 +112,6 @@ public class ElderGuardian
     public void onStoppingServer(GameStoppingServerEvent event)
     {
         this.availableStats = this.loreStatService.disableStats();
-
         this.translation.info("elderguardian.disable");
     }
 
@@ -160,7 +165,7 @@ public class ElderGuardian
             CommentedConfigurationNode root = configurationLoader.load();
 
             this.availableStats = this.getEnabledStats(root.getNode(PLUGIN_ID, "enabled-modules"));
-            this.loreStatService.loadLoreConfig(root.getNode("lores"));
+            this.loreStatService.loadConfig(root.getNode(PLUGIN_ID, "data-storage"));
 
             this.rootConfig = root;
         }
@@ -177,7 +182,7 @@ public class ElderGuardian
             CommentedConfigurationNode root = Optional.ofNullable(this.rootConfig).orElseGet(configurationLoader::createEmptyNode);
 
             this.setEnabledStats(root.getNode(PLUGIN_ID, "enabled-modules"), availableStats);
-            this.loreStatService.saveLoreConfig(root.getNode("lores"));
+            this.loreStatService.saveConfig(root.getNode(PLUGIN_ID, "data-storage"));
 
             configurationLoader.save(root);
         }
@@ -190,6 +195,11 @@ public class ElderGuardian
     public Logger getLogger()
     {
         return this.logger;
+    }
+
+    public Path getConfigurationDir()
+    {
+        return this.configurationDir;
     }
 
     public ElderGuardianTranslation getTranslation()

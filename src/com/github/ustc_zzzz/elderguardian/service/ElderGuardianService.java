@@ -36,6 +36,7 @@ public class ElderGuardianService extends ElderGuardianLoreMatcherHandler implem
 
     public ElderGuardianService(ElderGuardian plugin)
     {
+        super(plugin);
         this.coolDownHelper = new ElderGuardianCoolDownHelper(plugin);
         Sponge.getServiceManager().setProvider(plugin, LoreStatService.class, this);
         Sponge.getEventManager().registerListener(plugin, SpawnEntityEvent.class, this::onSpawnEntity);
