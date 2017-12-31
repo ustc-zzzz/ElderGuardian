@@ -51,6 +51,7 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
 
     private final CommandSpec matcherListCommand;
     private final CommandSpec matcherAddCommand;
+    private final CommandSpec matcherClearCommand;
     private final CommandSpec matcherApplyCommand;
 
     public ElderGuardianCommandManager(ElderGuardian plugin)
@@ -91,6 +92,11 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
                                                 GenericArguments.string(Text.of("template"))))))
                 .inputTokenizer(InputTokenizer.quotedStrings(true))
                 .executor(this::executeMatcherAdd).build();
+        this.matcherClearCommand = CommandSpec.builder()
+                .arguments(
+                        GenericArguments.string(Text.of("key")))
+                .inputTokenizer(InputTokenizer.quotedStrings(true))
+                .executor(this::executeMatcherClear).build();
         this.matcherApplyCommand = CommandSpec.builder()
                 .arguments(
                         new LoreMatcherCommandElement(this.plugin, Text.of("lore-matcher")),
@@ -136,6 +142,10 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
                     .linesPerPage(lines.size() / items.size() * 2 + 2)
                     .title(this.translation.take("elderguardian.command.list.header", items.size()))
                     .contents(lines).sendTo(src);
+        }
+        else
+        {
+            src.sendMessage(this.translation.take("elderguardian.command.list.showEmpty"));
         }
         return CommandResult.success();
     }
@@ -242,6 +252,10 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
                     .title(this.translation.take("elderguardian.command.matcherList.header", items.size()))
                     .contents(lines).sendTo(src);
         }
+        else
+        {
+            src.sendMessage(this.translation.take("elderguardian.command.matcherList.showEmpty"));
+        }
         return CommandResult.success();
     }
 
@@ -264,6 +278,30 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
         this.service.addLoreMatcher(key, LoreMatcher.fromContainer(data));
         src.sendMessage(this.translation.take("elderguardian.command.matcherAdd.matcherAddedSuccessfully", key));
         return CommandResult.success();
+    }
+
+    private CommandResult executeMatcherClear(CommandSource src, CommandContext args) throws CommandException
+    {
+        // noinspection ConstantConditions
+        String key = args.<String>getOne(Text.of("key")).get();
+        this.checkPermission(src, "elderguardian.matcher.remove", "elderguardian.command.matcherClear.noPermission");
+        if ("--all".equals(key))
+        {
+            for (String id : this.service.getAvailableLoreMatchers()) this.service.clearLoreMatchers(id);
+            src.sendMessage(this.translation.take("elderguardian.command.matcherClear.clearedAllSuccessfully"));
+            return CommandResult.success();
+        }
+        else
+        {
+            List<LoreMatcher> matchers = this.service.getLoreMatchers(key);
+            if (matchers.isEmpty())
+            {
+                throw new CommandException(this.translation.take("elderguardian.command.matcherClear.alreadyEmpty", key));
+            }
+            this.service.clearLoreMatchers(key);
+            src.sendMessage(this.translation.take("elderguardian.command.matcherClear.clearedSuccessfully"));
+            return CommandResult.success();
+        }
     }
 
     private CommandResult executeMatcherApply(CommandSource src, CommandContext args) throws CommandException
@@ -342,6 +380,7 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
                 .child(this.saveCommand, "save", "s")
                 .child(this.matcherListCommand, "matcher-list", "ml")
                 .child(this.matcherAddCommand, "matcher-add", "mp")
+                .child(this.matcherClearCommand, "matcher-clear", "mc")
                 .child(this.matcherApplyCommand, "matcher-apply", "ma")
                 .description(this.translation.take("elderguardian.commandDescription")).build();
     }
