@@ -49,6 +49,10 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
     private final CommandSpec loadCommand;
     private final CommandSpec saveCommand;
 
+    private final CommandSpec presetsListCommand;
+    private final CommandSpec presetsSetCommand;
+    private final CommandSpec presetsClearCommand;
+
     private final CommandSpec matcherListCommand;
     private final CommandSpec matcherAddCommand;
     private final CommandSpec matcherClearCommand;
@@ -76,6 +80,22 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
                                 GenericArguments.string(Text.of("key"))))
                 .executor(this::executeSave).build();
 
+        this.presetsListCommand = CommandSpec.builder()
+                .arguments(
+                        GenericArguments.string(Text.of("key")))
+                .executor(this::executePresetsList).build();
+        this.presetsSetCommand = CommandSpec.builder()
+                .arguments(
+                        GenericArguments.string(Text.of("key")),
+                        GenericArguments.string(Text.of("preset-key")),
+                        GenericArguments.string(Text.of("preset-value")))
+                .executor(this::executePresetsSet).build();
+        this.presetsClearCommand = CommandSpec.builder()
+                .arguments(
+                        GenericArguments.string(Text.of("key")),
+                        GenericArguments.string(Text.of("preset-key")))
+                .executor(this::executePresetsClear).build();
+
         this.matcherListCommand = CommandSpec.builder()
                 .arguments(
                         GenericArguments.optional(
@@ -95,7 +115,6 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
         this.matcherClearCommand = CommandSpec.builder()
                 .arguments(
                         GenericArguments.string(Text.of("key")))
-                .inputTokenizer(InputTokenizer.quotedStrings(true))
                 .executor(this::executeMatcherClear).build();
         this.matcherApplyCommand = CommandSpec.builder()
                 .arguments(
@@ -206,6 +225,71 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
         return CommandResult.success();
     }
 
+    private CommandResult executePresetsList(CommandSource src, CommandContext args) throws CommandException
+    {
+        // noinspection ConstantConditions
+        String key = args.<String>getOne(Text.of("key")).get();
+        this.checkPermission(src, "elderguardian.presets.list", "elderguardian.command.presetsList.noPermission");
+        Map<String, String> presets = this.service.getLoreStatPresets(key);
+        if (presets.isEmpty())
+        {
+            src.sendMessage(this.translation.take("elderguardian.command.presetsList.showEmpty", key));
+        }
+        else
+        {
+            boolean notFirstJoin = false;
+            Text.Builder builder = Text.builder();
+            builder.append(Text.of(TextColors.GREEN, "("));
+            for (Map.Entry<String, String> entry : presets.entrySet())
+            {
+                if (notFirstJoin) builder.append(Text.of(TextColors.GREEN, ", "));
+                builder.append(Text.of(TextColors.BLUE, entry.getKey()));
+                builder.append(Text.of(TextColors.GREEN, " => "));
+                builder.append(Text.of(TextColors.LIGHT_PURPLE, entry.getValue()));
+                notFirstJoin = true;
+            }
+            builder.append(Text.of(TextColors.GREEN, ")"));
+            src.sendMessage(this.translation.take("elderguardian.command.presetsList.showNonEmpty", key, presets.size()));
+            src.sendMessage(builder.build());
+        }
+        return CommandResult.success();
+    }
+
+    private CommandResult executePresetsSet(CommandSource src, CommandContext args) throws CommandException
+    {
+        // noinspection ConstantConditions
+        String key = args.<String>getOne(Text.of("key")).get();
+        this.checkPermission(src, "elderguardian.presets.modify", "elderguardian.command.presetsSet.noPermission");
+        // noinspection ConstantConditions
+        String presetKey = args.<String>getOne(Text.of("preset-key")).get();
+        // noinspection ConstantConditions
+        String presetValue = args.<String>getOne(Text.of("preset-value")).get();
+
+        this.service.addLoreStatPreset(key, presetKey, presetValue);
+        src.sendMessage(this.translation.take("elderguardian.command.presetsSet.doneSuccessfully", presetKey, presetValue));
+        return CommandResult.success();
+    }
+
+    private CommandResult executePresetsClear(CommandSource src, CommandContext args) throws CommandException
+    {
+        // noinspection ConstantConditions
+        String key = args.<String>getOne(Text.of("key")).get();
+        this.checkPermission(src, "elderguardian.presets.modify", "elderguardian.command.presetsClear.noPermission");
+        // noinspection ConstantConditions
+        String presetKey = args.<String>getOne(Text.of("preset-key")).get();
+        if ("--all".equals(presetKey))
+        {
+            this.service.clearLoreStatPresets(key);
+            src.sendMessage(this.translation.take("elderguardian.command.presetsClear.clearedAllSuccessfully", key));
+        }
+        else
+        {
+            this.service.addLoreStatPreset(key, presetKey, "");
+            src.sendMessage(this.translation.take("elderguardian.command.presetsClear.clearedSuccessfully", key, presetKey));
+        }
+        return CommandResult.success();
+    }
+
     private CommandResult executeMatcherList(CommandSource src, CommandContext args) throws CommandException
     {
         String wildcard = args.<String>getOne(Text.of("wildcard")).orElse("");
@@ -263,7 +347,7 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
     {
         // noinspection ConstantConditions
         String key = args.<String>getOne(Text.of("key")).get();
-        this.checkPermission(src, "elderguardian.matcher.add", "elderguardian.command.matcherAdd.noPermission");
+        this.checkPermission(src, "elderguardian.matcher.modify", "elderguardian.command.matcherAdd.noPermission");
         Collection<String> templates = args.getAll(Text.of("template"));
         if (templates.isEmpty())
         {
@@ -284,7 +368,7 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
     {
         // noinspection ConstantConditions
         String key = args.<String>getOne(Text.of("key")).get();
-        this.checkPermission(src, "elderguardian.matcher.remove", "elderguardian.command.matcherClear.noPermission");
+        this.checkPermission(src, "elderguardian.matcher.modify", "elderguardian.command.matcherClear.noPermission");
         if ("--all".equals(key))
         {
             for (String id : this.service.getAvailableLoreMatchers()) this.service.clearLoreMatchers(id);
@@ -378,6 +462,9 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
                 .child(this.listCommand, "list", "l")
                 .child(this.loadCommand, "load", "give", "g")
                 .child(this.saveCommand, "save", "s")
+                .child(this.presetsListCommand, "presets-list", "pl")
+                .child(this.presetsSetCommand, "presets-set", "ps")
+                .child(this.presetsClearCommand, "presets-clear", "pc")
                 .child(this.matcherListCommand, "matcher-list", "ml")
                 .child(this.matcherAddCommand, "matcher-add", "mp")
                 .child(this.matcherClearCommand, "matcher-clear", "mc")

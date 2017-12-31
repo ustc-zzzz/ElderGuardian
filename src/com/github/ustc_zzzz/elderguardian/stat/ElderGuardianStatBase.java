@@ -50,11 +50,12 @@ public abstract class ElderGuardianStatBase extends LoreStatEventDriven
 
     protected List<DataContainer> getStatsInHand(Player player, ItemStackSnapshot snapshot)
     {
-        LoreMatcherContext context = this.loreStatService.getContextBy(player, snapshot);
-        List<LoreMatcher> matchers = this.loreStatService.getLoreMatchers(id);
-        List<Text> l = context.getHeldItemLore();
+        DataContainer presets = this.loreStatService.getLoreStatPresetsContainer(this.id);
+        List<LoreMatcher> matchers = this.loreStatService.getLoreMatchers(this.id);
+        LoreMatcherContext c = this.loreStatService.getContextBy(player, snapshot);
+        List<Text> l = c.getHeldItemLore();
 
-        return matchers.stream().flatMap(m -> m.match(l, context).stream()).collect(GuavaCollectors.toImmutableList());
+        return matchers.stream().flatMap(m -> m.match(l, c, presets).stream()).collect(GuavaCollectors.toImmutableList());
     }
 
     protected List<DataContainer> getStatsInHand(Player player)
@@ -64,11 +65,12 @@ public abstract class ElderGuardianStatBase extends LoreStatEventDriven
 
     protected List<DataContainer> getStatsInHand(Projectile projectile)
     {
-        LoreMatcherContext context = this.loreStatService.getContextBy(projectile);
-        List<LoreMatcher> matchers = this.loreStatService.getLoreMatchers(id);
-        List<Text> l = context.getHeldItemLore();
+        DataContainer presets = this.loreStatService.getLoreStatPresetsContainer(this.id);
+        List<LoreMatcher> matchers = this.loreStatService.getLoreMatchers(this.id);
+        LoreMatcherContext c = this.loreStatService.getContextBy(projectile);
+        List<Text> l = c.getHeldItemLore();
 
-        return matchers.stream().flatMap(m -> m.match(l, context).stream()).collect(GuavaCollectors.toImmutableList());
+        return matchers.stream().flatMap(m -> m.match(l, c, presets).stream()).collect(GuavaCollectors.toImmutableList());
     }
 
     protected Collection<String> getDefaultTemplates()

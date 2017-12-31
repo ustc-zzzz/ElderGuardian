@@ -3,6 +3,7 @@ package com.github.ustc_zzzz.elderguardian.service;
 import com.github.ustc_zzzz.elderguardian.ElderGuardian;
 import com.github.ustc_zzzz.elderguardian.api.LoreMatcher;
 import com.github.ustc_zzzz.elderguardian.api.LoreMatcherHandler;
+import com.github.ustc_zzzz.elderguardian.api.LoreStatPresetsHandler;
 import com.github.ustc_zzzz.elderguardian.util.ElderGuardianHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -27,10 +28,11 @@ import java.util.*;
  * @author ustc_zzzz
  */
 @NonnullByDefault
-public class ElderGuardianLoreMatcherHandler implements LoreMatcherHandler
+public class ElderGuardianLoreMatcherHandler implements LoreMatcherHandler, LoreStatPresetsHandler
 {
     private final ElderGuardian plugin;
     private final Map<String, ItemStack> storedStacks = new TreeMap<>();
+    private final Map<String, TreeMap<String, String>> presets = new TreeMap<>();
     private final Map<String, LinkedList<LoreMatcher>> matchers = new TreeMap<>();
 
     private boolean dirty = false;
@@ -68,6 +70,45 @@ public class ElderGuardianLoreMatcherHandler implements LoreMatcherHandler
     {
         this.matchers.computeIfAbsent(id, k -> new LinkedList<>()).add(loreMatcher);
         this.dirty = true;
+    }
+
+    @Override
+    public Collection<String> getAvailableLoreStatPresets()
+    {
+        return ImmutableSet.copyOf(this.presets.keySet());
+    }
+
+    @Override
+    public Map<String, String> getLoreStatPresets(String id)
+    {
+        return this.presets.containsKey(id) ? ImmutableMap.copyOf(this.presets.get(id)) : ImmutableMap.of();
+    }
+
+    @Override
+    public void clearLoreStatPresets(String id)
+    {
+        this.presets.remove(id);
+        this.dirty = true;
+    }
+
+    @Override
+    public void addLoreStatPreset(String id, String presetKey, String presetValue)
+    {
+        if (presetValue.isEmpty())
+        {
+            if (this.presets.containsKey(id))
+            {
+                TreeMap<String, String> map = this.presets.get(id);
+                map.remove(presetKey);
+                if (map.isEmpty()) this.presets.remove(id);
+                this.dirty = true;
+            }
+        }
+        else
+        {
+            this.presets.computeIfAbsent(id, k -> new TreeMap<>()).put(presetKey, presetValue);
+            this.dirty = true;
+        }
     }
 
     public Collection<String> listStacks()
@@ -177,11 +218,13 @@ public class ElderGuardianLoreMatcherHandler implements LoreMatcherHandler
 
     private void loadLoreConfig(CommentedConfigurationNode node)
     {
+        this.presets.clear();
         this.matchers.clear();
         for (Map.Entry<Object, ? extends CommentedConfigurationNode> entry : node.getChildrenMap().entrySet())
         {
             LinkedList<LoreMatcher> matchers = new LinkedList<>();
-            for (CommentedConfigurationNode child : entry.getValue().getChildrenList())
+            CommentedConfigurationNode matcherNode = entry.getValue().getNode("matcher");
+            for (CommentedConfigurationNode child : matcherNode.getChildrenList())
             {
                 List<String> templateStrings = this.getTemplateStrings(child);
                 if (!templateStrings.isEmpty())
@@ -193,8 +236,16 @@ public class ElderGuardianLoreMatcherHandler implements LoreMatcherHandler
                     matchers.add(LoreMatcher.fromContainer(d));
                 }
             }
+            TreeMap<String, String> presets = new TreeMap<>();
+            CommentedConfigurationNode presetsNode = entry.getValue().getNode("presets");
+            for (Map.Entry<Object, ? extends CommentedConfigurationNode> e : presetsNode.getChildrenMap().entrySet())
+            {
+                String presetValue = e.getValue().getString("");
+                if (!presetValue.isEmpty()) presets.put(e.getKey().toString(), presetValue);
+            }
             String key = ElderGuardianHelper.swapUnderlinesAndDashes(entry.getKey().toString());
             if (!matchers.isEmpty()) this.matchers.put(key, matchers);
+            if (!presets.isEmpty()) this.presets.put(key, presets);
         }
     }
 
@@ -204,7 +255,7 @@ public class ElderGuardianLoreMatcherHandler implements LoreMatcherHandler
         for (Map.Entry<String, LinkedList<LoreMatcher>> entry : this.matchers.entrySet())
         {
             String key = ElderGuardianHelper.swapUnderlinesAndDashes(entry.getKey());
-            CommentedConfigurationNode childrenNodeList = node.getNode(key);
+            CommentedConfigurationNode childrenNodeList = node.getNode(key, "matcher");
             childrenNodeList.setValue(ImmutableList.of());
             for (LoreMatcher matcher : entry.getValue())
             {
@@ -212,6 +263,15 @@ public class ElderGuardianLoreMatcherHandler implements LoreMatcherHandler
                 child.getNode("close-arg").setValue(matcher.getCloseArg());
                 child.getNode("open-arg").setValue(matcher.getOpenArg());
                 this.setTemplateStrings(child, matcher.getTemplates());
+            }
+        }
+        for (Map.Entry<String, TreeMap<String, String>> entry : this.presets.entrySet())
+        {
+            String key = ElderGuardianHelper.swapUnderlinesAndDashes(entry.getKey());
+            CommentedConfigurationNode childrenNodeMap = node.getNode(key, "presets");
+            for (Map.Entry<String, String> e : entry.getValue().entrySet())
+            {
+                childrenNodeMap.getNode(e.getKey()).setValue(e.getValue());
             }
         }
     }

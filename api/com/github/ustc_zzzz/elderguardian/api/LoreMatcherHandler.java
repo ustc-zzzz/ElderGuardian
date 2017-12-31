@@ -37,15 +37,15 @@ public interface LoreMatcherHandler
         this.addLoreMatcher(stat.getLoreStatId(), loreMatcher);
     }
 
-    default List<DataContainer> matchLoreByHeldItem(String id, LoreMatcherContext context)
+    default List<DataContainer> matchLoreByHeldItem(String id, LoreMatcherContext context, DataContainer presets)
     {
         List<Text> l = context.getHeldItemLore();
         List<LoreMatcher> matchers = this.getLoreMatchers(id);
-        return matchers.stream().flatMap(m -> m.match(l, context).stream()).collect(GuavaCollectors.toImmutableList());
+        return matchers.stream().flatMap(m -> m.match(l, context, presets).stream()).collect(GuavaCollectors.toImmutableList());
     }
 
-    default List<DataContainer> matchLoreByHeldItem(LoreStat stat, LoreMatcherContext context)
+    default List<DataContainer> matchLoreByHeldItem(LoreStat stat, LoreMatcherContext context, DataContainer presets)
     {
-        return this.matchLoreByHeldItem(stat.getLoreStatId(), context);
+        return this.matchLoreByHeldItem(stat.getLoreStatId(), context, presets);
     }
 }

@@ -59,27 +59,31 @@ public final class LoreMatcher implements DataSerializable
         if (this.loreTemplateSize == 0) throw new IllegalArgumentException("The templates should not be empty");
     }
 
-    private Optional<DataContainer> matchWithOffset(List<Text> lores, int offset)
+    private Optional<DataContainer> matchWithOffset(List<Text> lores, int offset, DataContainer presets)
     {
-        DataContainer container = new MemoryDataContainer();
+        DataContainer container = presets.copy();
         for (LoreTemplate template : this.loreTemplates)
         {
             Optional<DataContainer> containerOptional = template.translate(lores.get(offset++));
 
             if (!containerOptional.isPresent()) return Optional.empty();
             Map<DataQuery, Object> values = containerOptional.get().getValues(true);
-            for (Map.Entry<DataQuery, Object> e : values.entrySet()) container.set(e.getKey(), e.getValue());
+            for (Map.Entry<DataQuery, Object> e : values.entrySet())
+            {
+                Object value = e.getValue();
+                if (!value.toString().isEmpty()) container.set(e.getKey(), value);
+            }
         }
         return Optional.of(container);
     }
 
-    public List<DataContainer> match(List<Text> lores, LoreMatcherContext context)
+    public List<DataContainer> match(List<Text> lores, LoreMatcherContext context, DataContainer presets)
     {
         int loreSize = lores.size();
         int maxOffsetAvailable = loreSize - this.loreTemplateSize;
 
         ImmutableList.Builder<DataContainer> builder = ImmutableList.builder();
-        for (int i = 0; i <= maxOffsetAvailable; ++i) this.matchWithOffset(lores, i).ifPresent(builder::add);
+        for (int i = 0; i <= maxOffsetAvailable; ++i) this.matchWithOffset(lores, i, presets).ifPresent(builder::add);
 
         return builder.build();
     }
