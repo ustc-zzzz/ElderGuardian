@@ -31,8 +31,8 @@ import java.util.*;
 public class ElderGuardianLoreMatcherHandler implements LoreMatcherHandler
 {
     private final ElderGuardian plugin;
-    private final Map<String, ItemStack> storedStacks = new HashMap<>();
-    private final Map<String, LinkedList<LoreMatcher>> matchers = new HashMap<>();
+    private final Map<String, ItemStack> storedStacks = new TreeMap<>();
+    private final Map<String, LinkedList<LoreMatcher>> matchers = new TreeMap<>();
 
     private boolean dirty = false;
     private String filePathString = "data.conf";

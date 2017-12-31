@@ -100,6 +100,36 @@ public class ElderGuardianHelper
         return FilenameUtils.wildcardMatch(value, wildcard);
     }
 
+    public static String indexToOrdinalString(int index)
+    {
+        if (++index <= 0) throw new IllegalArgumentException("index should be non-negative");
+        switch (index % 100)
+        {
+        case 1:
+        case 21:
+        case 31:
+        case 41:
+        case 51:
+        case 61:
+        case 71:
+        case 81:
+        case 91:
+            return index + "st";
+        case 2:
+        case 22:
+        case 32:
+        case 42:
+        case 52:
+        case 62:
+        case 72:
+        case 82:
+        case 92:
+            return index + "nd";
+        default:
+            return index + "th";
+        }
+    }
+
     private ElderGuardianHelper()
     {
         // nothing
