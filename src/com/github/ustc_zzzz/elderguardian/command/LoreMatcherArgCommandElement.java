@@ -26,7 +26,8 @@ import java.util.stream.Collectors;
 @NonnullByDefault
 public class LoreMatcherArgCommandElement extends CommandElement
 {
-    private final @Nullable Text loreMatcherArgName;
+    @Nullable
+    private final Text loreMatcherArgName;
     private final ElderGuardianTranslation translation;
 
     LoreMatcherArgCommandElement(ElderGuardian plugin, @Nullable Text loreMatcherArgName, @Nullable Text key)
@@ -46,9 +47,15 @@ public class LoreMatcherArgCommandElement extends CommandElement
         for (String argument : arguments)
         {
             int index = argument.indexOf('=');
-            if (index <= 0) throw args.createError(this.translation.take("elderguardian.command.matcherApply.invalidArg", argument));
+            if (index <= 0)
+            {
+                throw args.createError(this.translation.take("elderguardian.command.matcherApply.invalidArg", argument));
+            }
             String key = argument.substring(0, index), value = argument.substring(index + 1);
-            if (argumentMap.containsKey(key)) throw args.createError(this.translation.take("elderguardian.command.matcherApply.duplicateArgKey", argument, key));
+            if (argumentMap.containsKey(key))
+            {
+                throw args.createError(this.translation.take("elderguardian.command.matcherApply.duplicateArgKey", argument, key));
+            }
             argumentMap.put(key, value);
         }
         return ImmutableMap.copyOf(argumentMap);

@@ -8,7 +8,6 @@ import com.github.ustc_zzzz.elderguardian.service.ElderGuardianService;
 import com.github.ustc_zzzz.elderguardian.util.ElderGuardianHelper;
 import org.spongepowered.api.command.*;
 import org.spongepowered.api.command.args.CommandContext;
-import org.spongepowered.api.command.args.CommandElement;
 import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.args.parsing.InputTokenizer;
 import org.spongepowered.api.command.spec.CommandSpec;
@@ -16,7 +15,6 @@ import org.spongepowered.api.data.DataContainer;
 import org.spongepowered.api.data.DataQuery;
 import org.spongepowered.api.data.MemoryDataContainer;
 import org.spongepowered.api.data.key.Keys;
-import org.spongepowered.api.data.manipulator.mutable.item.LoreData;
 import org.spongepowered.api.data.type.HandType;
 import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
@@ -52,6 +50,7 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
     private final CommandSpec saveCommand;
 
     private final CommandSpec matcherListCommand;
+    private final CommandSpec matcherAddCommand;
     private final CommandSpec matcherApplyCommand;
 
     public ElderGuardianCommandManager(ElderGuardian plugin)
@@ -81,6 +80,17 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
                         GenericArguments.optional(
                                 GenericArguments.string(Text.of("wildcard"))))
                 .executor(this::executeMatcherList).build();
+        this.matcherAddCommand = CommandSpec.builder()
+                .arguments(
+                        GenericArguments.flags().valueFlag(
+                                GenericArguments.string(Text.of("open-arg")), "-open-arg").valueFlag(
+                                GenericArguments.string(Text.of("close-arg")), "-close-arg").buildWith(
+                                GenericArguments.seq(
+                                        GenericArguments.string(Text.of("key")),
+                                        GenericArguments.allOf(
+                                                GenericArguments.string(Text.of("template"))))))
+                .inputTokenizer(InputTokenizer.quotedStrings(true))
+                .executor(this::executeMatcherAdd).build();
         this.matcherApplyCommand = CommandSpec.builder()
                 .arguments(
                         new LoreMatcherCommandElement(this.plugin, Text.of("lore-matcher")),
@@ -221,7 +231,7 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
                     .style(TextStyles.UNDERLINE)
                     .onHover(TextActions.showText(Text.of("Execute \"" + command + "\"")))
                     .onClick(TextActions.suggestCommand(command + " "))));
-            builder.add(Text.of(" |- ", this.translation.take("elderguardian.command.matcherList.showArgs", size)));
+            builder.add(Text.of(" |- ", this.translation.take("elderguardian.command.matcherList.showLines", size)));
             return builder.build();
         }).collect(Collectors.toList());
 
@@ -232,6 +242,27 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
                     .title(this.translation.take("elderguardian.command.matcherList.header", items.size()))
                     .contents(lines).sendTo(src);
         }
+        return CommandResult.success();
+    }
+
+    private CommandResult executeMatcherAdd(CommandSource src, CommandContext args) throws CommandException
+    {
+        // noinspection ConstantConditions
+        String key = args.<String>getOne(Text.of("key")).get();
+        this.checkPermission(src, "elderguardian.matcher.add", "elderguardian.command.matcherAdd.noPermission");
+        Collection<String> templates = args.getAll(Text.of("template"));
+        if (templates.isEmpty())
+        {
+            throw new CommandException(this.translation.take("elderguardian.command.matcherAdd.noEmptyTemplate"));
+        }
+        Optional<String> openArg = args.getOne(Text.of("open-arg"));
+        Optional<String> closeArg = args.getOne(Text.of("close-arg"));
+        DataContainer data = new MemoryDataContainer();
+        data.set(LoreMatcher.TEMPLATES, templates);
+        openArg.ifPresent(s -> data.set(LoreMatcher.OPEN_ARG, s));
+        closeArg.ifPresent(s -> data.set(LoreMatcher.CLOSE_ARG, s));
+        this.service.addLoreMatcher(key, LoreMatcher.fromContainer(data));
+        src.sendMessage(this.translation.take("elderguardian.command.matcherAdd.matcherAddedSuccessfully", key));
         return CommandResult.success();
     }
 
@@ -310,6 +341,7 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
                 .child(this.loadCommand, "load", "give", "g")
                 .child(this.saveCommand, "save", "s")
                 .child(this.matcherListCommand, "matcher-list", "ml")
+                .child(this.matcherAddCommand, "matcher-add", "mp")
                 .child(this.matcherApplyCommand, "matcher-apply", "ma")
                 .description(this.translation.take("elderguardian.commandDescription")).build();
     }

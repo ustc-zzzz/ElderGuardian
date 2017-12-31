@@ -1,17 +1,11 @@
 package com.github.ustc_zzzz.elderguardian.service;
 
 import com.github.ustc_zzzz.elderguardian.ElderGuardian;
-import com.github.ustc_zzzz.elderguardian.api.LoreMatcher;
 import com.github.ustc_zzzz.elderguardian.api.LoreMatcherContext;
 import com.github.ustc_zzzz.elderguardian.api.LoreStat;
 import com.github.ustc_zzzz.elderguardian.api.LoreStatService;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.data.DataContainer;
-import org.spongepowered.api.data.MemoryDataContainer;
 import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
