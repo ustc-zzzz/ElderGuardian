@@ -320,11 +320,16 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
             String command = "/elderguardian matcher-apply " + key + " " + index;
             Stream.Builder<Text> builder = Stream.builder();
             builder.add(Text.of("* " + key + " (" + ElderGuardianHelper.indexToOrdinalString(index) + ")"));
+            List<Text> lores = matcher.getLoreTemplates().stream()
+                    .map(t -> Text.of(TextColors.LIGHT_PURPLE, t.toString())).collect(Collectors.toList());
             builder.add(Text.of(" |- ", Text.builder("[apply]")
                     .color(TextColors.BLUE)
                     .style(TextStyles.UNDERLINE)
                     .onHover(TextActions.showText(Text.of("Execute \"" + command + "\"")))
-                    .onClick(TextActions.suggestCommand(command + " "))));
+                    .onClick(TextActions.suggestCommand(command + " ")), Text.of(" "), Text.builder("[lores]")
+                    .color(TextColors.BLUE)
+                    .style(TextStyles.UNDERLINE)
+                    .onHover(TextActions.showText(Text.joinWith(Text.of("\n"), lores)))));
             builder.add(Text.of(" |- ", this.translation.take("elderguardian.command.matcherList.showLines", size)));
             return builder.build();
         }).collect(Collectors.toList());
@@ -332,7 +337,7 @@ public class ElderGuardianCommandManager implements Supplier<CommandCallable>
         if (!items.isEmpty())
         {
             PaginationList.builder()
-                    .linesPerPage(lines.size() / items.size() * 2 + 2)
+                    .linesPerPage(lines.size() / items.size() * 4 + 2)
                     .title(this.translation.take("elderguardian.command.matcherList.header", items.size()))
                     .contents(lines).sendTo(src);
         }
