@@ -1,8 +1,10 @@
 package com.github.ustc_zzzz.elderguardian;
 
+import com.github.ustc_zzzz.elderguardian.command.ElderGuardianCommandManager;
 import com.github.ustc_zzzz.elderguardian.service.ElderGuardianService;
 import com.github.ustc_zzzz.elderguardian.stat.ElderGuardianStat;
 import com.github.ustc_zzzz.elderguardian.stat.ElderGuardianStatBase;
+import com.github.ustc_zzzz.elderguardian.util.ElderGuardianHelper;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.reflect.ClassPath;
@@ -56,6 +58,7 @@ public class ElderGuardian
 
     private ElderGuardianTranslation translation;
     private ElderGuardianService loreStatService;
+    private ElderGuardianCommandManager commandManager;
 
     private List<ElderGuardianStatBase> stats = new LinkedList<>();
     private Set<String> availableStats;
@@ -65,6 +68,7 @@ public class ElderGuardian
     {
         this.translation = new ElderGuardianTranslation(this);
         this.loreStatService = new ElderGuardianService(this);
+        this.commandManager = new ElderGuardianCommandManager(this);
     }
 
     @Listener
@@ -90,6 +94,7 @@ public class ElderGuardian
         {
             throw new RuntimeException(e);
         }
+        Sponge.getCommandManager().register(this, this.commandManager.get(), "elderguardian", "elg");
     }
 
     @Listener
@@ -145,7 +150,7 @@ public class ElderGuardian
         ImmutableSet.Builder<String> builder = ImmutableSet.builder();
         for (String id : this.loreStatService.getAvailableStats())
         {
-            if (node.getNode(id.replace('_', '-')).getBoolean(true)) builder.add(id);
+            if (node.getNode(ElderGuardianHelper.swapUnderlinesAndDashes(id)).getBoolean(true)) builder.add(id);
         }
         return builder.build();
     }
@@ -154,7 +159,7 @@ public class ElderGuardian
     {
         for (String id : this.loreStatService.getAvailableStats())
         {
-            node.getNode(id.replace('_', '-')).setValue(enabledModules.contains(id));
+            node.getNode(ElderGuardianHelper.swapUnderlinesAndDashes(id)).setValue(enabledModules.contains(id));
         }
     }
 
@@ -210,5 +215,10 @@ public class ElderGuardian
     public ElderGuardianService getLoreStatService()
     {
         return this.loreStatService;
+    }
+
+    public ElderGuardianCommandManager getCommandManager()
+    {
+        return this.commandManager;
     }
 }
